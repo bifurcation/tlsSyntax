@@ -5,7 +5,7 @@ import (
 )
 
 func TestTagParsing(t *testing.T) {
-	opts := parseTag("head=2,min=3,max=60000")
+	opts := parseTag("=x,head=2,min=3,max=60000")
 	if len(opts) != 3 {
 		t.Fatalf("Failed to parse all fields")
 	}

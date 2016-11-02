@@ -5,6 +5,27 @@ import (
 	"testing"
 )
 
+func TestDecodeUnsupported(t *testing.T) {
+	var y struct {
+		Strings []string
+	}
+	err := Unmarshal(z8, &y)
+	if err == nil {
+		t.Fatalf("Agreed to unmarshal an unsupported type")
+	}
+
+	var yi int
+	err = Unmarshal(z8, yi)
+	if err == nil {
+		t.Fatalf("Agreed to unmarshal to a non-pointer")
+	}
+
+	err = Unmarshal(z8, nil)
+	if err == nil {
+		t.Fatalf("Agreed to unmarshal to a nil pointer")
+	}
+}
+
 func TestDecodeBasicTypes(t *testing.T) {
 	var y8 uint8
 	err := Unmarshal(z8, &y8)

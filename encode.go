@@ -122,7 +122,7 @@ type sliceEncoder struct {
 
 func (se *sliceEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	if opts.head == 0 {
-		panic(fmt.Errorf("Cannot encode a slice with a header length"))
+		panic(fmt.Errorf("Cannot encode a slice without a header length"))
 	}
 
 	arrayState := &encodeState{}

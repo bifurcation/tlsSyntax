@@ -39,16 +39,20 @@ var (
 	}{V: bytes.Repeat([]byte{0xA0}, 0x20000)}
 	zv20000, _ = hex.DecodeString("020000" + strings.Repeat("A0", 0x20000))
 
+	xvENohead = struct {
+		V []byte
+	}{V: xv20.V}
+
 	xvEhead = struct {
 		V []byte `tls:"head=1"`
 	}{V: xv200.V}
 
 	xvEmax = struct {
-		V []byte `tls:"max=31"`
+		V []byte `tls:"head=1,max=31"`
 	}{V: xv20.V}
 
 	xvEmin = struct {
-		V []byte `tls:"min=33"`
+		V []byte `tls:"head=1,min=33"`
 	}{V: xv20.V}
 
 	xs1 = struct {
@@ -62,6 +66,16 @@ var (
 	}
 	zs1, _ = hex.DecodeString("B0A0" + "0005A0A1A2A3A4" + "10111213202122233031323340414243")
 )
+
+func TestEncodeInvalidCases(t *testing.T) {
+	x := struct {
+		Strings []string
+	}{Strings: []string{"asdf"}}
+	_, err := Marshal(x)
+	if err == nil {
+		t.Fatalf("Agreed to marshal an unsupported type")
+	}
+}
 
 func TestEncodeBasicTypes(t *testing.T) {
 	y8, err := Marshal(x8)
@@ -108,7 +122,12 @@ func TestEncodeSlice(t *testing.T) {
 		t.Fatalf("[0x20000]uint8 encode failed [%v] [%x]", err, yv20000)
 	}
 
-	yE, err := Marshal(xvEhead)
+	yE, err := Marshal(xvENohead)
+	if err == nil {
+		t.Fatalf("Allowed marshal with no header size [%x]", yE)
+	}
+
+	yE, err = Marshal(xvEhead)
 	if err == nil {
 		t.Fatalf("Allowed marshal exceeding header size [%x]", yE)
 	}
