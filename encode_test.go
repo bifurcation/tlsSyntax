@@ -25,40 +25,40 @@ var (
 	za, _ = hex.DecodeString("11112222333344445555")
 
 	xv20 = struct {
-		v []byte `tls:"head=1"`
-	}{v: bytes.Repeat([]byte{0xA0}, 0x20)}
+		V []byte `tls:"head=1"`
+	}{V: bytes.Repeat([]byte{0xA0}, 0x20)}
 	zv20, _ = hex.DecodeString("20" + strings.Repeat("A0", 0x20))
 
 	xv200 = struct {
-		v []byte `tls:"head=2"`
-	}{v: bytes.Repeat([]byte{0xA0}, 0x200)}
+		V []byte `tls:"head=2"`
+	}{V: bytes.Repeat([]byte{0xA0}, 0x200)}
 	zv200, _ = hex.DecodeString("0200" + strings.Repeat("A0", 0x200))
 
 	xv20000 = struct {
-		v []byte `tls:"head=3"`
-	}{v: bytes.Repeat([]byte{0xA0}, 0x20000)}
+		V []byte `tls:"head=3"`
+	}{V: bytes.Repeat([]byte{0xA0}, 0x20000)}
 	zv20000, _ = hex.DecodeString("020000" + strings.Repeat("A0", 0x20000))
 
 	xvEhead = struct {
-		v []byte `tls:"head=1"`
-	}{v: xv200.v}
+		V []byte `tls:"head=1"`
+	}{V: xv200.V}
 
 	xvEmax = struct {
-		v []byte `tls:"max=31"`
-	}{v: xv20.v}
+		V []byte `tls:"max=31"`
+	}{V: xv20.V}
 
 	xvEmin = struct {
-		v []byte `tls:"min=33"`
-	}{v: xv20.v}
+		V []byte `tls:"min=33"`
+	}{V: xv20.V}
 
 	xs1 = struct {
-		a uint16
-		b []uint8 `tls:"head=2"`
-		c [4]uint32
+		A uint16
+		B []uint8 `tls:"head=2"`
+		C [4]uint32
 	}{
-		a: 0xB0A0,
-		b: []uint8{0xA0, 0xA1, 0xA2, 0xA3, 0xA4},
-		c: [4]uint32{0x10111213, 0x20212223, 0x30313233, 0x40414243},
+		A: 0xB0A0,
+		B: []uint8{0xA0, 0xA1, 0xA2, 0xA3, 0xA4},
+		C: [4]uint32{0x10111213, 0x20212223, 0x30313233, 0x40414243},
 	}
 	zs1, _ = hex.DecodeString("B0A0" + "0005A0A1A2A3A4" + "10111213202122233031323340414243")
 )
@@ -88,24 +88,24 @@ func TestEncodeBasicTypes(t *testing.T) {
 func TestEncodeArray(t *testing.T) {
 	ya, err := Marshal(xa)
 	if err != nil || !bytes.Equal(ya, za) {
-		t.Fatalf("[5]uint16 encode failed [%v] [%x]", err, ya)
+		t.Fatalf("[5]uint8 encode failed [%v] [%x]", err, ya)
 	}
 }
 
 func TestEncodeSlice(t *testing.T) {
 	yv20, err := Marshal(xv20)
 	if err != nil || !bytes.Equal(yv20, zv20) {
-		t.Fatalf("[0x20]uint16 encode failed [%v] [%x]", err, yv20)
+		t.Fatalf("[0x20]uint8 encode failed [%v] [%x]", err, yv20)
 	}
 
 	yv200, err := Marshal(xv200)
 	if err != nil || !bytes.Equal(yv200, zv200) {
-		t.Fatalf("[0x200]uint16 encode failed [%v] [%x]", err, yv200)
+		t.Fatalf("[0x200]uint8 encode failed [%v] [%x]", err, yv200)
 	}
 
 	yv20000, err := Marshal(xv20000)
 	if err != nil || !bytes.Equal(yv20000, zv20000) {
-		t.Fatalf("[0x20000]uint16 encode failed [%v] [%x]", err, yv20000)
+		t.Fatalf("[0x20000]uint8 encode failed [%v] [%x]", err, yv20000)
 	}
 
 	yE, err := Marshal(xvEhead)

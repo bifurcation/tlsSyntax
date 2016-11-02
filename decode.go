@@ -57,7 +57,7 @@ func (e *decodeState) value(v reflect.Value) {
 type decoderFunc func(e *decodeState, v reflect.Value, opts decOpts)
 
 func valueDecoder(v reflect.Value) decoderFunc {
-	return typeDecoder(v.Type())
+	return typeDecoder(v.Type().Elem())
 }
 
 func typeDecoder(t reflect.Type) decoderFunc {
@@ -68,7 +68,7 @@ func typeDecoder(t reflect.Type) decoderFunc {
 func newTypeDecoder(t reflect.Type) decoderFunc {
 	// Note: Does not support Marshaler, so don't need the allowAddr argument
 
-	switch t.Elem().Kind() {
+	switch t.Kind() {
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return uintDecoder
 	case reflect.Array:
@@ -82,7 +82,7 @@ func newTypeDecoder(t reflect.Type) decoderFunc {
 	}
 }
 
-///// Specific encoders below
+///// Specific decoders below
 
 func uintDecoder(d *decodeState, v reflect.Value, opts decOpts) {
 	var uintLen int
@@ -98,9 +98,12 @@ func uintDecoder(d *decodeState, v reflect.Value, opts decOpts) {
 	}
 
 	buf := make([]byte, uintLen)
-	_, err := d.Read(buf)
+	n, err := d.Read(buf)
 	if err != nil {
 		panic(err)
+	}
+	if n != uintLen {
+		panic(fmt.Errorf("Insufficient data to read uint"))
 	}
 
 	val := uint64(0)
@@ -147,35 +150,46 @@ func (sd *sliceDecoder) decode(d *decodeState, v reflect.Value, opts decOpts) {
 		panic(err)
 	}
 
-	length := 0
+	length := uint(0)
 	for _, b := range lengthBytes {
-		length = (length << 8) + int(b)
+		length = (length << 8) + uint(b)
+	}
+
+	if opts.max > 0 && length > opts.max {
+		panic(fmt.Errorf("Length of vector exceeds declared max"))
+	}
+	if length < opts.min {
+		panic(fmt.Errorf("Length of vector below declared min"))
 	}
 
 	data := make([]byte, length)
-	_, err = d.Read(data)
+	n, err := d.Read(data)
 	if err != nil {
 		panic(err)
 	}
+	if uint(n) != length {
+		panic(fmt.Errorf("Available data less than declared length"))
+	}
 
-	elemBuf := bytes.NewBuffer(data)
+	elemBuf := &decodeState{}
+	elemBuf.Write(data)
 	elems := []reflect.Value{}
 	for elemBuf.Len() > 0 {
 		elem := reflect.New(sd.elementType)
-		sd.elementDec(d, elem, opts)
+		sd.elementDec(elemBuf, elem, opts)
 		elems = append(elems, elem)
 	}
 
 	v.Elem().Set(reflect.MakeSlice(v.Elem().Type(), len(elems), len(elems)))
 	for i := 0; i < len(elems); i += 1 {
-		v.Elem().Index(i).Set(elems[i])
+		v.Elem().Index(i).Set(elems[i].Elem())
 	}
 }
 
 func newSliceDecoder(t reflect.Type) decoderFunc {
 	dec := &sliceDecoder{
-		elementType: t.Elem().Elem(),
-		elementDec:  typeDecoder(t.Elem().Elem()),
+		elementType: t.Elem(),
+		elementDec:  typeDecoder(t.Elem()),
 	}
 	return dec.decode
 }
@@ -189,7 +203,7 @@ type structDecoder struct {
 
 func (sd *structDecoder) decode(d *decodeState, v reflect.Value, opts decOpts) {
 	for i := range sd.fieldDecs {
-		sd.fieldDecs[i](d, v.Field(i).Addr(), sd.fieldOpts[i])
+		sd.fieldDecs[i](d, v.Elem().Field(i).Addr(), sd.fieldOpts[i])
 	}
 }
 
@@ -202,6 +216,7 @@ func newStructDecoder(t reflect.Type) decoderFunc {
 
 	for i := 0; i < n; i += 1 {
 		f := t.Field(i)
+
 		tag := f.Tag.Get("tls")
 		tagOpts := parseTag(tag)
 
@@ -210,6 +225,7 @@ func newStructDecoder(t reflect.Type) decoderFunc {
 			max:  tagOpts["max"],
 			min:  tagOpts["min"],
 		}
+
 		sd.fieldDecs[i] = typeDecoder(f.Type)
 	}
 
