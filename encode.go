@@ -121,6 +121,10 @@ type sliceEncoder struct {
 }
 
 func (se *sliceEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
+	if opts.head == 0 {
+		panic(fmt.Errorf("Cannot encode a slice with a header length"))
+	}
+
 	arrayState := &encodeState{}
 	se.ae.encode(arrayState, v, opts)
 
@@ -128,22 +132,14 @@ func (se *sliceEncoder) encode(e *encodeState, v reflect.Value, opts encOpts) {
 	if opts.max > 0 && n > opts.max {
 		panic(fmt.Errorf("Encoded length more than max [%d > %d]", n, opts.max))
 	}
-	if opts.head > 0 && uint64(n) > uint64(1)<<(8*opts.head) {
+	if uint64(n) > uint64(1)<<(8*opts.head) {
 		panic(fmt.Errorf("Encoded length too long for header length [%d, %d]", n, opts.head))
 	}
 	if n < opts.min {
 		panic(fmt.Errorf("Encoded length less than min [%d < %d]", n, opts.min))
 	}
 
-	head := opts.head
-	if head < 1 {
-		head = 1
-		for n > 1<<(8*head) && head < 4 {
-			head += 1
-		}
-	}
-
-	for i := int(head - 1); i >= 0; i -= 1 {
+	for i := int(opts.head - 1); i >= 0; i -= 1 {
 		e.WriteByte(byte(n >> (8 * uint(i))))
 	}
 	e.Write(arrayState.Bytes())

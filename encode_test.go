@@ -24,26 +24,32 @@ var (
 	xa    = [5]uint16{0x1111, 0x2222, 0x3333, 0x4444, 0x5555}
 	za, _ = hex.DecodeString("11112222333344445555")
 
-	xv20    = bytes.Repeat([]byte{0xA0}, 0x20)
+	xv20 = struct {
+		v []byte `tls:"head=1"`
+	}{v: bytes.Repeat([]byte{0xA0}, 0x20)}
 	zv20, _ = hex.DecodeString("20" + strings.Repeat("A0", 0x20))
 
-	xv200    = bytes.Repeat([]byte{0xA0}, 0x200)
+	xv200 = struct {
+		v []byte `tls:"head=2"`
+	}{v: bytes.Repeat([]byte{0xA0}, 0x200)}
 	zv200, _ = hex.DecodeString("0200" + strings.Repeat("A0", 0x200))
 
-	xv20000    = bytes.Repeat([]byte{0xA0}, 0x20000)
+	xv20000 = struct {
+		v []byte `tls:"head=3"`
+	}{v: bytes.Repeat([]byte{0xA0}, 0x20000)}
 	zv20000, _ = hex.DecodeString("020000" + strings.Repeat("A0", 0x20000))
 
 	xvEhead = struct {
 		v []byte `tls:"head=1"`
-	}{v: xv200}
+	}{v: xv200.v}
 
 	xvEmax = struct {
 		v []byte `tls:"max=31"`
-	}{v: xv20}
+	}{v: xv20.v}
 
 	xvEmin = struct {
 		v []byte `tls:"min=33"`
-	}{v: xv20}
+	}{v: xv20.v}
 
 	xs1 = struct {
 		a uint16
